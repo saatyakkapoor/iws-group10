@@ -330,6 +330,66 @@
             font-weight: 600;
         }
 
+        /* Predictions Section Styles */
+        .predictions-container {
+            background: var(--card-bg);
+            border: 1px solid var(--card-border);
+            border-radius: 15px;
+            padding: 1.5rem;
+            margin-top: 2rem;
+            animation: fadeIn 0.8s ease-out;
+        }
+
+        .predictions-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 1.5rem;
+            margin-top: 1rem;
+        }
+
+        .prediction-card {
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 12px;
+            padding: 1.5rem;
+            transition: var(--transition);
+        }
+
+        .prediction-card:hover {
+            transform: translateY(-5px);
+            border-color: rgba(255, 255, 255, 0.3);
+            box-shadow: 0 8px 20px rgba(0, 0, 0, 0.3);
+        }
+
+        .prediction-card .value {
+            font-size: 2.2rem;
+            font-weight: 700;
+            margin: 0.5rem 0;
+            color: #ffffff;
+        }
+
+        .prediction-card .description {
+            color: var(--text-secondary);
+            font-size: 0.9rem;
+        }
+
+        .prediction-loading {
+            text-align: center;
+            padding: 2rem;
+            grid-column: 1 / -1;
+        }
+
+        .prediction-loading i {
+            animation: spin 1.5s linear infinite;
+            font-size: 2rem;
+            margin-bottom: 1rem;
+        }
+
+        /* Custom icons */
+        .fa-comfort:before {
+            content: "\f2a7";
+        }
+
         @keyframes spin {
             0% { transform: rotate(0deg); }
             100% { transform: rotate(360deg); }
@@ -417,6 +477,20 @@
                     Sensor Location
                 </div>
                 <div id="map"></div>
+            </div>
+        </div>
+
+        <!-- Predictions Section -->
+        <div class="predictions-container">
+            <div class="map-title">
+                <i class="fas fa-cloud-sun"></i>
+                Weather Predictions & Indices
+            </div>
+            <div class="predictions-grid" id="predictionsGrid">
+                <div class="prediction-loading">
+                    <i class="fas fa-sync fa-spin"></i>
+                    <div class="loading-text">Loading weather predictions...</div>
+                </div>
             </div>
         </div>
 
@@ -746,6 +820,9 @@
                                 strokeWeight: 3
                             });
                         }
+
+                        // Fetch predictions after updating sensor data
+                        fetchPredictions();
                     }
                     
                     document.getElementById('loading').style.display = 'none';
@@ -757,14 +834,132 @@
             }
         }
 
+        // Fetch weather predictions from API
+        async function fetchPredictions() {
+            const predictionsGrid = document.getElementById('predictionsGrid');
+            predictionsGrid.innerHTML = `
+                <div class="prediction-loading">
+                    <i class="fas fa-sync fa-spin"></i>
+                    <div class="loading-text">Analyzing weather patterns...</div>
+                </div>
+            `;
+
+            // Validate we have required data
+            if (!currentSensorData.temperature || !currentSensorData.humidity || 
+                !currentSensorData.speed || !currentSensorData.direction) {
+                predictionsGrid.innerHTML = `
+                    <div class="prediction-card" style="grid-column: 1 / -1;">
+                        <div class="sensor-title">
+                            <i class="fas fa-exclamation-triangle"></i>
+                            Data Incomplete
+                        </div>
+                        <div class="description">Cannot fetch predictions - missing sensor data</div>
+                    </div>
+                `;
+                return;
+            }
+
+            try {
+                const apiUrl = `https://iws-group10.vercel.app/api/weather?temperature=${currentSensorData.temperature}&humidity=${currentSensorData.humidity}&windSpeed=${currentSensorData.speed}&windDirection=${currentSensorData.direction}`;
+                
+                const response = await fetch(apiUrl);
+                if (!response.ok) throw new Error(`API error: ${response.status}`);
+                
+                const data = await response.json();
+                renderPredictions(data);
+            } catch (error) {
+                console.error("Error fetching predictions:", error);
+                predictionsGrid.innerHTML = `
+                    <div class="prediction-card" style="grid-column: 1 / -1;">
+                        <div class="sensor-title">
+                            <i class="fas fa-exclamation-triangle"></i>
+                            Prediction Error
+                        </div>
+                        <div class="description">Failed to load weather predictions: ${error.message}</div>
+                    </div>
+                `;
+            }
+        }
+
+        // Render predictions in the grid
+        function renderPredictions(data) {
+            const predictionsGrid = document.getElementById('predictionsGrid');
+            predictionsGrid.innerHTML = '';
+
+            const predictionCards = [
+                {
+                    title: "Feels Like",
+                    icon: "fa-temperature-high",
+                    value: `${data.indices.feelsLike || 'N/A'}°C`,
+                    desc: "Perceived temperature based on humidity"
+                },
+                {
+                    title: "Discomfort Index",
+                    icon: "fa-face-dizzy",
+                    value: data.indices.discomfortIndex || 'N/A',
+                    desc: "Higher values indicate more discomfort"
+                },
+                {
+                    title: "UV Risk",
+                    icon: "fa-sun",
+                    value: data.indices.uvRisk || 'N/A',
+                    desc: "Sun exposure risk level"
+                },
+                {
+                    title: "Rain Prediction",
+                    icon: "fa-cloud-rain",
+                    value: data.weatherForecast.rainPrediction || 'N/A',
+                    desc: "Likelihood of precipitation"
+                },
+                {
+                    title: "Comfort Level",
+                    icon: "fa-comfort",
+                    value: data.weatherForecast.comfortLevel || 'N/A',
+                    desc: "Current comfort conditions"
+                },
+                {
+                    title: "Wind Warning",
+                    icon: "fa-wind",
+                    value: data.weatherForecast.windWarning || 'None',
+                    desc: "Wind-related alerts"
+                },
+                {
+                    title: "Dew Point",
+                    icon: "fa-dewpoint",
+                    value: `${data.indices.dewPoint || 'N/A'}°C`,
+                    desc: "Temperature at which dew forms"
+                },
+                {
+                    title: "Clothing Advice",
+                    icon: "fa-tshirt",
+                    value: data.weatherForecast.clothingSuggestion || 'N/A',
+                    desc: "Recommended attire"
+                }
+            ];
+
+            predictionCards.forEach(card => {
+                const cardEl = document.createElement('div');
+                cardEl.className = 'prediction-card';
+                cardEl.innerHTML = `
+                    <div class="sensor-title">
+                        <i class="fas ${card.icon}"></i>
+                        ${card.title}
+                    </div>
+                    <div class="value">${card.value}</div>
+                    <div class="description">${card.desc}</div>
+                `;
+                predictionsGrid.appendChild(cardEl);
+            });
+        }
+
         // Initialize everything when page loads
         window.onload = function() {
             initMap();
             fetchLatestSensorData();
+            
+            // Auto refresh every 10 seconds
+            setInterval(fetchLatestSensorData, 10000);
         };
-
-        // Auto refresh every 5 seconds
-        
     </script>
 
     <!-- Google Maps API -->
