@@ -833,19 +833,6 @@
             `;
 
             // Validate we have required data
-            if (!currentSensorData.temperature || !currentSensorData.humidity || 
-                !currentSensorData.speed || !currentSensorData.direction) {
-                predictionsGrid.innerHTML = `
-                    <div class="prediction-card" style="grid-column: 1 / -1;">
-                        <div class="sensor-title">
-                            <i class="fas fa-exclamation-triangle"></i>
-                            Data Incomplete
-                        </div>
-                        <div class="description">Cannot fetch predictions - missing sensor data</div>
-                    </div>
-                `;
-                return;
-            }
 
             try {
                 const apiUrl = `https://iws-group10.vercel.app/api/weather?temperature=${currentSensorData.temperature}&humidity=${currentSensorData.humidity}&windSpeed=${currentSensorData.speed}&windDirection=${currentSensorData.direction}`;
