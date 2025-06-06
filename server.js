@@ -90,6 +90,7 @@ function getRainPrediction(temp, humidity, windSpeed) {
 }
 
 function getWindWarning(windSpeed) {
+  if (windSpeed <= 0) return "No wind give";
   if (windSpeed > 25) return "Strong Winds";
   if (windSpeed > 15) return "Breezy";
   return "None";
