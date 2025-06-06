@@ -773,7 +773,7 @@
             try {
                 await firebase.auth().signInWithEmailAndPassword("group10@assistlog.in", "Group@10");
                 
-                const sensorRef = firebase.database().ref('sensor_logs');
+                const sensorRef = firebase.database().ref('Group10');
                 
                 sensorRef.orderByKey().limitToLast(1).once('value', (snapshot) => {
                     const data = snapshot.val();
