@@ -240,7 +240,7 @@
             justify-content: center;
             align-items: center;
             z-index: 1000;
-            flex-direction: column;
+            flex-wind_direction: column;
             gap: 20px;
         }
 
@@ -302,7 +302,7 @@
 
         .sensor-item {
             display: flex;
-            flex-direction: column;
+            flex-wind_direction: column;
             align-items: center;
             padding: 0.8rem;
             background: rgba(255, 255, 255, 0.05);
@@ -523,8 +523,8 @@
                 },
                 move: {
                     enable: true,
-                    speed: 2,
-                    direction: "none",
+                    wind_speed_kmph: 2,
+                    wind_direction: "none",
                     random: true,
                     straight: false,
                     out_mode: "out",
@@ -726,12 +726,12 @@
                         <div style="background: rgba(255, 255, 255, 0.08); padding: 6px; border-radius: 4px; text-align: center;">
                             <div style="font-size: 14px;">💨</div>
                             <div style="font-size: 9px; color: #cccccc; text-transform: uppercase; margin: 2px 0;">Speed</div>
-                            <div style="font-size: 12px; color: #ffffff;">${currentSensorData.wind_speed_kmph || 'N/A'} km/h</div>
+                            <div style="font-size: 12px; color: #ffffff;">${currentSensorData.humidity || 'N/A'} km/h</div>
                         </div>
                         <div style="background: rgba(255, 255, 255, 0.08); padding: 6px; border-radius: 4px; text-align: center;">
                             <div style="font-size: 14px;">🧭</div>
                             <div style="font-size: 9px; color: #cccccc; text-transform: uppercase; margin: 2px 0;">Dir</div>
-                            <div style="font-size: 12px; color: #ffffff;">${currentSensorData.wind_direction || 'N/A'}</div>
+                            <div style="font-size: 12px; color: #ffffff;">${currentSensorData.wind_wind_direction || 'N/A'}</div>
                         </div>
                     </div>
                     <div style="margin-top: 8px; padding-top: 6px; border-top: 1px solid #333; text-align: center;">
@@ -786,9 +786,9 @@
                         
                         // Add sensor cards with staggered animation
                         const cards = [
-                            createSensorCard('Direction', latestData.direction, '', 'fa-compass'),
+                            createSensorCard('Direction', latestData.wind_direction, '', 'fa-compass'),
                             createSensorCard('Humidity', latestData.humidity, '%', 'fa-tint'),
-                            createSensorCard('Speed', latestData.speed, 'km/h', 'fa-wind'),
+                            createSensorCard('Speed', latestData.wind_speed_kmph, 'km/h', 'fa-wind'),
                             createSensorCard('Temperature', latestData.temperature, '°C', 'fa-thermometer-half')
                         ];
                         
@@ -835,7 +835,7 @@
             // Validate we have required data
 
             try {
-                const apiUrl = `https://iws-group10.vercel.app/api/weather?temperature=${currentSensorData.temperature}&humidity=${currentSensorData.humidity}&windSpeed=${currentSensorData.speed}&windDirection=${currentSensorData.direction}`;
+                const apiUrl = `https://iws-group10.vercel.app/api/weather?temperature=${currentSensorData.temperature}&humidity=${currentSensorData.humidity}&windSpeed=${currentSensorData.wind_speed_kmph}&windDirection=${currentSensorData.wind_direction}`;
                 
                 const response = await fetch(apiUrl);
                 if (!response.ok) throw new Error(`API error: ${response.status}`);
