@@ -12,10 +12,7 @@ app.all("/api/weather", (req, res) => {
   const windDirection = input.windDirection || "Unknown";
 
   const errors = [];
-  if (isNaN(temperature)) errors.push("Invalid or missing temperature");
-  if (isNaN(humidity)) errors.push("Invalid or missing humidity");
-  if (isNaN(windSpeed)) errors.push("Invalid or missing windSpeed");
-
+  
   if (errors.length > 0) {
     return res.status(400).json({ error: "Validation error", details: errors });
   }
@@ -49,7 +46,7 @@ app.all("/api/weather", (req, res) => {
     },
     meta: {
       serverTime: new Date().toISOString(),
-      location: "Plaksha University, Mohali , Punjab - Auth code : 0xPLAKSHA-SAATYAK5462025"
+      location: "Plaksha University, Mohali , Punjab - Auth code : why are you here sir? "
     }
   });
 });
