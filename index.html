@@ -726,7 +726,7 @@
                         <div style="background: rgba(255, 255, 255, 0.08); padding: 6px; border-radius: 4px; text-align: center;">
                             <div style="font-size: 14px;">💨</div>
                             <div style="font-size: 9px; color: #cccccc; text-transform: uppercase; margin: 2px 0;">Speed</div>
-                            <div style="font-size: 12px; color: #ffffff;">${currentSensorData.humidity || 'N/A'} km/h</div>
+                            <div style="font-size: 12px; color: #ffffff;">${currentSensorData.humidity || 'N/A'} m/s</div>
                         </div>
                         <div style="background: rgba(255, 255, 255, 0.08); padding: 6px; border-radius: 4px; text-align: center;">
                             <div style="font-size: 14px;">🧭</div>
@@ -788,7 +788,7 @@
                         const cards = [
                             createSensorCard('Direction', latestData.wind_direction, '', 'fa-compass'),
                             createSensorCard('Humidity', latestData.humidity, '%', 'fa-tint'),
-                            createSensorCard('Speed', latestData.wind_speed_kmph, 'km/h', 'fa-wind'),
+                            createSensorCard('Speed', latestData.wind_speed_kmph, 'm/s', 'fa-wind'),
                             createSensorCard('Temperature', latestData.temperature, '°C', 'fa-thermometer-half')
                         ];
                         
@@ -873,12 +873,6 @@
                     icon: "fa-face-dizzy",
                     value: data.indices.discomfortIndex || 'N/A',
                     desc: "Higher values indicate more discomfort"
-                },
-                {
-                    title: "UV Risk",
-                    icon: "fa-sun",
-                    value: data.indices.uvRisk || 'N/A',
-                    desc: "Sun exposure risk level"
                 },
                 {
                     title: "Rain Prediction",
