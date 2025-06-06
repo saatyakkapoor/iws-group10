@@ -98,6 +98,7 @@ function getRainPrediction(temp, humidity, windSpeed) {
 }
 
 function getWindWarning(windSpeed) {
+  if (windSpeed <= 0) return "N.A."
   if (windSpeed > 25) return "High Wind Warning";
   if (windSpeed > 15) return "Wind Advisory";
   return "Normal Conditions";
