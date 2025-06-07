@@ -798,13 +798,16 @@
             card.id = `card-${id}`;
             card.style.animation = 'fadeIn 0.5s ease-out forwards';
             
+            // Show loading state if value is not available
+            const displayValue = (value !== undefined && value !== null && value !== '') ? value : '...';
+            
             card.innerHTML = `
                 <div class="sensor-title">
                     <i class="fas ${icon}"></i>
                     ${title}
                 </div>
                 <div class="sensor-value" id="value-${id}">
-                    ${value !== undefined && value !== null ? value : 'null'}
+                    ${displayValue}
                     <span class="sensor-unit">${unit}</span>
                 </div>
                 <div class="sensor-status">
@@ -820,22 +823,27 @@
         function updateSensorCard(id, newValue) {
             const valueElement = document.getElementById(`value-${id}`);
             if (valueElement) {
-                const oldValue = valueElement.textContent.split(' ')[0];
-                
-                // Only update if value has changed
-                if (oldValue !== String(newValue)) {
-                    valueElement.textContent = `${newValue} `;
-                    const unit = document.querySelector(`#value-${id} .sensor-unit`);
-                    if (unit) {
-                        valueElement.appendChild(unit);
-                    }
+                // Only update if we have a valid value (not undefined, null, or empty string)
+                if (newValue !== undefined && newValue !== null && newValue !== '') {
+                    const oldValue = valueElement.textContent.split(' ')[0];
                     
-                    // Add animation class for visual feedback
-                    valueElement.classList.add('value-updating');
-                    setTimeout(() => {
-                        valueElement.classList.remove('value-updating');
-                    }, 1500);
+                    // Only update if value has actually changed
+                    if (oldValue !== String(newValue)) {
+                        // Store the unit element before updating
+                        const unitElement = valueElement.querySelector('.sensor-unit');
+                        const unitText = unitElement ? unitElement.textContent : '';
+                        
+                        // Update the main value while preserving the unit
+                        valueElement.innerHTML = `${newValue}<span class="sensor-unit">${unitText}</span>`;
+                        
+                        // Add animation class for visual feedback
+                        valueElement.classList.add('value-updating');
+                        setTimeout(() => {
+                            valueElement.classList.remove('value-updating');
+                        }, 1500);
+                    }
                 }
+                // If newValue is invalid, we simply don't update - keeping the previous value
             }
         }
 
@@ -890,7 +898,7 @@
                                     // Start prediction interval
                                     startPredictionInterval();
                                 } else {
-                                    // Update existing cards
+                                    // Update existing cards with validation
                                     updateSensorCard('direction', latestData.wind_direction);
                                     updateSensorCard('humidity', 60.5);
                                     updateSensorCard('speed', latestData.wind_speed_kmph);
@@ -899,8 +907,10 @@
                                     // Update map marker
                                     updateMarker();
                                     
-                                    // Show update indicator
-                                    showUpdateIndicator();
+                                    // Show update indicator only if we actually have valid data
+                                    if (latestData.temperature !== undefined || latestData.wind_speed_kmph !== undefined || latestData.wind_direction !== undefined) {
+                                        showUpdateIndicator();
+                                    }
                                 }
                             }
                         });
