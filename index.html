@@ -771,7 +771,7 @@
                         </div>
                         <div style="background: rgba(255, 255, 255, 0.08); padding: 6px; border-radius: 4px; text-align: center;">
                             <div style="font-size: 14px;">💨</div>
-                            <div style="font-size: 9px; color: #cccccc; text-transform: uppercase; margin: 2px 0;">Speed</div>
+                            <div style="font-size: 9px; color: #cccccc; text-transform: uppercase; margin: 2px 0;">Speed (m/s)</div>
                             <div style="font-size: 12px; color: #ffffff;">${currentSensorData.wind_speed_kmph || 'N/A'} m/s</div>
                         </div>
                         <div style="background: rgba(255, 255, 255, 0.08); padding: 6px; border-radius: 4px; text-align: center;">
@@ -869,9 +869,9 @@
                                     // Create sensor cards
                                     const cards = [
                                         createSensorCard('Direction', latestData.wind_direction, '', 'fa-compass', 'direction'),
-                                        createSensorCard('Humidity', 60.5, '%', 'fa-tint', 'humidity'),
-                                        createSensorCard('Speed', latestData.wind_speed_kmph, 'm/s', 'fa-wind', 'speed'),
-                                        createSensorCard('Temperature', latestData.temperature, '°C', 'fa-thermometer-half', 'temperature')
+                                        createSensorCard('Humidity (%)', 60.5, '%', 'fa-tint', 'humidity'),
+                                        createSensorCard('Speed (m/s)', latestData.wind_speed_kmph, 'm/s', 'fa-wind', 'speed'),
+                                        createSensorCard('Temperature (°C)', latestData.temperature, '°C', 'fa-thermometer-half', 'temperature')
                                     ];
                                     
                                     cards.forEach(card => {
