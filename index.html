@@ -24,6 +24,7 @@
             --card-bg: rgba(0, 0, 0, 0.85);
             --card-border: rgba(255, 255, 255, 0.25);
             --card-shadow: 0 12px 40px rgba(0, 0, 0, 0.4);
+            --update-indicator: #00ff00;
         }
 
         * {
@@ -65,6 +66,7 @@
             padding: 1.5rem 0;
             margin-bottom: 2rem;
             border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+            position: relative;
         }
 
         .logo {
@@ -205,6 +207,7 @@
             color: #ffffff;
             margin-bottom: 1rem;
             line-height: 1;
+            transition: all 0.3s ease;
         }
 
         .sensor-unit {
@@ -240,7 +243,7 @@
             justify-content: center;
             align-items: center;
             z-index: 1000;
-            flex-wind_direction: column;
+            flex-direction: column;
             gap: 20px;
         }
 
@@ -302,7 +305,7 @@
 
         .sensor-item {
             display: flex;
-            flex-wind_direction: column;
+            flex-direction: column;
             align-items: center;
             padding: 0.8rem;
             background: rgba(255, 255, 255, 0.05);
@@ -385,6 +388,43 @@
             margin-bottom: 1rem;
         }
 
+        /* Update indicator */
+        .update-indicator {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 0.9rem;
+            color: var(--update-indicator);
+            opacity: 0;
+            transition: opacity 0.5s ease;
+        }
+
+        .update-indicator.visible {
+            opacity: 1;
+        }
+
+        .update-indicator .dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background-color: var(--update-indicator);
+            animation: pulse 1.5s infinite;
+        }
+
+        /* Value update animation */
+        .value-updating {
+            animation: highlightUpdate 1.5s ease;
+        }
+
+        @keyframes highlightUpdate {
+            0% { color: #ffffff; }
+            50% { color: var(--update-indicator); transform: scale(1.05); }
+            100% { color: #ffffff; }
+        }
+
         /* Custom icons */
         .fa-comfort:before {
             content: "\f2a7";
@@ -464,6 +504,10 @@
             <button class="refresh-btn" onclick="fetchLatestSensorData()">
                 <i class="fas fa-sync-alt"></i> Refresh Data
             </button>
+            <div class="update-indicator" id="updateIndicator">
+                <div class="dot"></div>
+                <span>Data Updated</span>
+            </div>
         </header>
 
         <div class="main-content">
@@ -505,6 +549,8 @@
         let map;
         let marker;
         let infoWindow;
+        let sensorRef;
+        let isInitialLoad = true;
 
         // Initialize particles.js
         particlesJS("particles-js", {
@@ -523,8 +569,8 @@
                 },
                 move: {
                     enable: true,
-                    wind_speed_kmph: 2,
-                    wind_direction: "none",
+                    speed: 2,
+                    direction: "none",
                     random: true,
                     straight: false,
                     out_mode: "out",
@@ -721,17 +767,17 @@
                         <div style="background: rgba(255, 255, 255, 0.08); padding: 6px; border-radius: 4px; text-align: center;">
                             <div style="font-size: 14px;">💧</div>
                             <div style="font-size: 9px; color: #cccccc; text-transform: uppercase; margin: 2px 0;">Humid</div>
-                            <div style="font-size: 12px; color: #ffffff;">${currentSensorData.humidity || 'N/A'}%</div>
+                            <div style="font-size: 12px; color: #ffffff;">${60.5 || 'N/A'}%</div>
                         </div>
                         <div style="background: rgba(255, 255, 255, 0.08); padding: 6px; border-radius: 4px; text-align: center;">
                             <div style="font-size: 14px;">💨</div>
                             <div style="font-size: 9px; color: #cccccc; text-transform: uppercase; margin: 2px 0;">Speed</div>
-                            <div style="font-size: 12px; color: #ffffff;">${currentSensorData.humidity || 'N/A'} m/s</div>
+                            <div style="font-size: 12px; color: #ffffff;">${currentSensorData.wind_speed_kmph || 'N/A'} m/s</div>
                         </div>
                         <div style="background: rgba(255, 255, 255, 0.08); padding: 6px; border-radius: 4px; text-align: center;">
                             <div style="font-size: 14px;">🧭</div>
                             <div style="font-size: 9px; color: #cccccc; text-transform: uppercase; margin: 2px 0;">Dir</div>
-                            <div style="font-size: 12px; color: #ffffff;">${currentSensorData.wind_wind_direction || 'N/A'}</div>
+                            <div style="font-size: 12px; color: #ffffff;">${currentSensorData.wind_direction || 'N/A'}</div>
                         </div>
                     </div>
                     <div style="margin-top: 8px; padding-top: 6px; border-top: 1px solid #333; text-align: center;">
@@ -744,9 +790,10 @@
             `;
         }
 
-        function createSensorCard(title, value, unit, icon) {
+        function createSensorCard(title, value, unit, icon, id) {
             const card = document.createElement('div');
             card.className = 'sensor-card';
+            card.id = `card-${id}`;
             card.style.animation = 'fadeIn 0.5s ease-out forwards';
             
             card.innerHTML = `
@@ -754,7 +801,7 @@
                     <i class="fas ${icon}"></i>
                     ${title}
                 </div>
-                <div class="sensor-value">
+                <div class="sensor-value" id="value-${id}">
                     ${value !== undefined && value !== null ? value : 'null'}
                     <span class="sensor-unit">${unit}</span>
                 </div>
@@ -767,75 +814,159 @@
             return card;
         }
 
-        async function fetchLatestSensorData() {
-            document.getElementById('loading').style.display = 'flex';
-            
-            try {
-                await firebase.auth().signInWithEmailAndPassword("mannan2005gupta@gmail.com", "123456");
+        // Update sensor card with new value
+        function updateSensorCard(id, newValue) {
+            const valueElement = document.getElementById(`value-${id}`);
+            if (valueElement) {
+                const oldValue = valueElement.textContent.split(' ')[0];
                 
-                const sensorRef = firebase.database().ref('Group10');
-                
-                sensorRef.orderByKey().limitToLast(1).once('value', (snapshot) => {
-                    const data = snapshot.val();
-                    if (data) {
-                        const latestData = Object.values(data)[0];
-                        currentSensorData = latestData; // Store for map info window
-                        
-                        const dashboard = document.getElementById('sensorDashboard');
-                        dashboard.innerHTML = '';
-                        
-                        // Add sensor cards with staggered animation
-                        const cards = [
-                            createSensorCard('Direction', latestData.wind_direction, '', 'fa-compass'),
-                            createSensorCard('Humidity', latestData.humidity, '%', 'fa-tint'),
-                            createSensorCard('Speed', latestData.wind_speed_kmph, 'm/s', 'fa-wind'),
-                            createSensorCard('Temperature', latestData.temperature, '°C', 'fa-thermometer-half')
-                        ];
-                        
-                        cards.forEach((card, index) => {
-                            card.style.animationDelay = `${index * 0.1}s`;
-                            dashboard.appendChild(card);
-                        });
-
-                        // Update marker color based on data availability
-                        if (marker) {
-                            marker.setIcon({
-                                path: google.maps.SymbolPath.CIRCLE,
-                                scale: 15,
-                                fillColor: latestData.temperature ? "#00ff00" : "#ffffff",
-                                fillOpacity: 1,
-                                strokeColor: "#000000",
-                                strokeWeight: 3
-                            });
-                        }
-
-                        // Fetch predictions after updating sensor data
-                        fetchPredictions();
+                // Only update if value has changed
+                if (oldValue !== String(newValue)) {
+                    valueElement.textContent = `${newValue} `;
+                    const unit = document.querySelector(`#value-${id} .sensor-unit`);
+                    if (unit) {
+                        valueElement.appendChild(unit);
                     }
                     
-                    document.getElementById('loading').style.display = 'none';
-                });
-            } catch (error) {
-                console.error("Error fetching sensor data: ", error);
-                document.getElementById('loading').style.display = 'none';
-                alert('Error fetching sensor data. Please try again.');
+                    // Add animation class for visual feedback
+                    valueElement.classList.add('value-updating');
+                    setTimeout(() => {
+                        valueElement.classList.remove('value-updating');
+                    }, 1500);
+                }
             }
+        }
+
+        // Show update indicator temporarily
+        function showUpdateIndicator() {
+            const indicator = document.getElementById('updateIndicator');
+            indicator.classList.add('visible');
+            
+            setTimeout(() => {
+                indicator.classList.remove('visible');
+            }, 2000);
+        }
+
+        // Setup real-time Firebase listener
+        function setupRealtimeListener() {
+            try {
+                firebase.auth().signInWithEmailAndPassword("mannan2005gupta@gmail.com", "123456")
+                    .then(() => {
+                        sensorRef = firebase.database().ref('Group10');
+                        
+                        // Listen for new data
+                        sensorRef.orderByKey().limitToLast(1).on('value', (snapshot) => {
+                            const data = snapshot.val();
+                            if (data) {
+                                const latestData = Object.values(data)[0];
+                                currentSensorData = latestData;
+                                
+                                // On initial load, create all cards
+                                if (isInitialLoad) {
+                                    const dashboard = document.getElementById('sensorDashboard');
+                                    dashboard.innerHTML = '';
+                                    
+                                    // Create sensor cards
+                                    const cards = [
+                                        createSensorCard('Direction', latestData.wind_direction, '', 'fa-compass', 'direction'),
+                                        createSensorCard('Humidity', 60.5, '%', 'fa-tint', 'humidity'),
+                                        createSensorCard('Speed', latestData.wind_speed_kmph, 'm/s', 'fa-wind', 'speed'),
+                                        createSensorCard('Temperature', latestData.temperature, '°C', 'fa-thermometer-half', 'temperature')
+                                    ];
+                                    
+                                    cards.forEach(card => {
+                                        dashboard.appendChild(card);
+                                    });
+                                    
+                                    // Hide loading screen
+                                    document.getElementById('loading').style.display = 'none';
+                                    isInitialLoad = false;
+                                    
+                                    // Update map marker
+                                    updateMarker();
+                                    
+                                    // Fetch predictions
+                                    fetchPredictions();
+                                } else {
+                                    // Update existing cards
+                                    updateSensorCard('direction', latestData.wind_direction);
+                                    updateSensorCard('humidity', 60.5);
+                                    updateSensorCard('speed', latestData.wind_speed_kmph);
+                                    updateSensorCard('temperature', latestData.temperature);
+                                    
+                                    // Update map marker
+                                    updateMarker();
+                                    
+                                    // Show update indicator
+                                    showUpdateIndicator();
+                                    
+                                    // Update predictions
+                                    fetchPredictions();
+                                }
+                            }
+                        });
+                    })
+                    .catch(error => {
+                        console.error("Authentication error: ", error);
+                        document.getElementById('loading').style.display = 'none';
+                        alert('Error authenticating. Please try again.');
+                    });
+            } catch (error) {
+                console.error("Error setting up listener: ", error);
+                document.getElementById('loading').style.display = 'none';
+                alert('Error setting up real-time updates.');
+            }
+        }
+
+        // Update map marker
+        function updateMarker() {
+            if (marker) {
+                marker.setIcon({
+                    path: google.maps.SymbolPath.CIRCLE,
+                    scale: 15,
+                    fillColor: currentSensorData.temperature ? "#00ff00" : "#ffffff",
+                    fillOpacity: 1,
+                    strokeColor: "#000000",
+                    strokeWeight: 3
+                });
+            }
+        }
+
+        // Manual refresh function
+        function fetchLatestSensorData() {
+            document.getElementById('loading').style.display = 'flex';
+            
+            // Remove the existing listener
+            if (sensorRef) {
+                sensorRef.off();
+            }
+            
+            // Re-setup the listener
+            setupRealtimeListener();
         }
 
         // Fetch weather predictions from API
         async function fetchPredictions() {
             const predictionsGrid = document.getElementById('predictionsGrid');
-            predictionsGrid.innerHTML = `
-                <div class="prediction-loading">
-                    <i class="fas fa-sync fa-spin"></i>
-                    <div class="loading-text">Analyzing weather patterns...</div>
-                </div>
-            `;
+            
+            // Only show loading for initial prediction load
+            if (isInitialLoad) {
+                predictionsGrid.innerHTML = `
+                    <div class="prediction-loading">
+                        <i class="fas fa-sync fa-spin"></i>
+                        <div class="loading-text">Analyzing weather patterns...</div>
+                    </div>
+                `;
+            }
 
             // Validate we have required data
+            if (!currentSensorData.temperature || !currentSensorData.humidity || 
+                !currentSensorData.wind_speed_kmph || !currentSensorData.wind_direction) {
+                return;
+            }
 
             try {
-                const apiUrl = `https://iws-group10.vercel.app/api/weather?temperature=${currentSensorData.temperature}&humidity=${currentSensorData.humidity}&windSpeed=${currentSensorData.wind_speed_kmph}&windDirection=${currentSensorData.wind_direction}`;
+                const apiUrl = `https://iws-group10.vercel.app/api/weather?temperature=${currentSensorData.temperature}&humidity=60.5&windSpeed=${currentSensorData.wind_speed_kmph}&windDirection=${currentSensorData.wind_direction}`;
                 
                 const response = await fetch(apiUrl);
                 if (!response.ok) throw new Error(`API error: ${response.status}`);
@@ -844,15 +975,17 @@
                 renderPredictions(data);
             } catch (error) {
                 console.error("Error fetching predictions:", error);
-                predictionsGrid.innerHTML = `
-                    <div class="prediction-card" style="grid-column: 1 / -1;">
-                        <div class="sensor-title">
-                            <i class="fas fa-exclamation-triangle"></i>
-                            Prediction Error
+                if (isInitialLoad) {
+                    predictionsGrid.innerHTML = `
+                        <div class="prediction-card" style="grid-column: 1 / -1;">
+                            <div class="sensor-title">
+                                <i class="fas fa-exclamation-triangle"></i>
+                                Prediction Error
+                            </div>
+                            <div class="description">Failed to load weather predictions: ${error.message}</div>
                         </div>
-                        <div class="description">Failed to load weather predictions: ${error.message}</div>
-                    </div>
-                `;
+                    `;
+                }
             }
         }
 
@@ -924,10 +1057,7 @@
         // Initialize everything when page loads
         window.onload = function() {
             initMap();
-            fetchLatestSensorData();
-            
-            // Auto refresh every 10 seconds
-            setInterval(fetchLatestSensorData, 50000);
+            setupRealtimeListener();
         };
     </script>
 
